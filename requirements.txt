@@ -3,6 +3,7 @@ pandas==2.2.2
 numpy==1.26.4
 plotly==5.22.0
 scikit-learn==1.5.2
-statsmodels==0.14.2
+statsmodels==0.14.4
+scipy==1.15.3
 pulp==2.7.0
 openai==1.44.1
