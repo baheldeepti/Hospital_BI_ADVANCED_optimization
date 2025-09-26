@@ -1,5 +1,5 @@
 # app.py
-# Hospital Optimization Studio — Feedback-Integrated Build (Fixed OHE param)
+# Hospital Optimization Studio — Feedback-Integrated Build (Fixed OHE param + Staffing date attr fix)
 # Modules: Price Prediction • Case Mix Optimizer • Staffing • Trends
 # No Gurobi; portable stack; OpenAI optional
 
@@ -698,8 +698,10 @@ with tabs[2]:
         if not feasible:
             st.error("🚫 Staffing optimization infeasible with current parameters.")
         else:
+            # Ensure pandas Series -> date via .dt access (fix for AttributeError: 'Series' object has no attribute 'date')
+            ds_dates = pd.to_datetime(fc["ds"], errors="coerce").dt.date
             sol = pd.DataFrame({
-                "Date": pd.to_datetime(fc["ds"]).date,
+                "Date": ds_dates,
                 "RN_Day": [int(RN_day[d].value()) for d in range(horizon)],
                 "RN_Evening": [int(RN_eve[d].value()) for d in range(horizon)],
                 "RN_Night": [int(RN_nig[d].value()) for d in range(horizon)],
