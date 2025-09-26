@@ -1,5 +1,5 @@
 # app.py
-# Hospital Optimization Studio — Feedback-Integrated Build
+# Hospital Optimization Studio — Feedback-Integrated Build (Fixed OHE param)
 # Modules: Price Prediction • Case Mix Optimizer • Staffing • Trends
 # No Gurobi; portable stack; OpenAI optional
 
@@ -52,7 +52,7 @@ THEME_CSS = """
 }
 html, body, [class^="css"]  {background-color: var(--bg);}
 .block-container{max-width:1500px;padding-top:12px}
-h1,h2,h3{font-weight:700;color:var(--ink)}
+h1,h2,h3{font-weight:700;color:#0b2740}
 .stTabs [data-baseweb="tab-list"] { gap: 6px }
 .stTabs [data-baseweb="tab"]{
   background: white; padding: 8px 14px; border-radius: 10px; border: 1px solid #e8eef5;
@@ -60,10 +60,10 @@ h1,h2,h3{font-weight:700;color:var(--ink)}
 .stTabs [aria-selected="true"]{
   background: #e8f2ff; border-color:#c8defc;
 }
-a {color:var(--teal)}
-.stButton>button{background:var(--pri);color:#fff;border-radius:10px;border:0}
-.badge{display:inline-block;padding:.25rem .55rem;border-radius:.5rem;background:#eef3f7;color:var(--ink);margin-right:.3rem}
-.small{color:var(--sub);font-size:0.92rem}
+a {color:#159E99}
+.stButton>button{background:#0F4C81;color:#fff;border-radius:10px;border:0}
+.badge{display:inline-block;padding:.25rem .55rem;border-radius:.5rem;background:#eef3f7;color:#0b2740;margin-right:.3rem}
+.small{color:#5b6b7a;font-size:0.92rem}
 hr{border-top:1px solid #e9eef3}
 .kpi{background:white;border:1px solid #e8eef5;border-radius:16px;padding:14px}
 .card{
@@ -246,7 +246,6 @@ def validate_and_normalize(df: pd.DataFrame) -> pd.DataFrame:
         small_neg = (los < 0) & (los >= -PI_EPS_LOS_DAYS)
         los[small_neg] = 0.0
         los[los < -PI_EPS_LOS_DAYS] = np.nan
-        # If fractional, keep fractional (some orgs use 2.5 days); downstream charts use mean()
         df["length_of_stay"] = los
 
     # Basic hygiene
@@ -275,6 +274,17 @@ def validate_and_normalize(df: pd.DataFrame) -> pd.DataFrame:
         df["anomaly_flag"] = 0
 
     return df
+
+# Back/forward compatible OneHotEncoder factory
+def make_ohe():
+    """
+    sklearn >=1.4/1.5 removed 'sparse' in favor of 'sparse_output'.
+    Try new param first, then fall back for older versions.
+    """
+    try:
+        return OneHotEncoder(handle_unknown="ignore", sparse_output=True)
+    except TypeError:
+        return OneHotEncoder(handle_unknown="ignore", sparse=True)
 
 # ------------------------ DATA LOAD ------------------------
 @st.cache_data(show_spinner=False)
@@ -431,7 +441,7 @@ with tabs[0]:
             num_pipe = Pipeline([("imputer", SimpleImputer(strategy="median")),
                                  ("scaler", StandardScaler())])
             cat_pipe = Pipeline([("imputer", SimpleImputer(strategy="most_frequent")),
-                                 ("ohe", OneHotEncoder(handle_unknown="ignore", sparse=True))])
+                                 ("ohe", make_ohe())])
             pre = ColumnTransformer([("num", num_pipe, num_cols),
                                      ("cat", cat_pipe, cat_cols)], remainder="drop")
 
